@@ -36,7 +36,6 @@ export function LoginForm() {
   const [password, setPassword] = React.useState("")
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
-  const [signupHint, setSignupHint] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     if (authLoading || !session) return
@@ -46,7 +45,6 @@ export function LoginForm() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
-    setSignupHint(null)
     setLoading(true)
     try {
       const supabase = getSupabaseClient()
@@ -70,8 +68,7 @@ export function LoginForm() {
 
       if (!signInError && signInData.session) {
         await refreshSession()
-        router.replace(ROUTE_ENTRY_FORM)
-        router.refresh()
+        window.location.assign(ROUTE_ENTRY_FORM)
         return
       }
 
@@ -100,13 +97,23 @@ export function LoginForm() {
 
         if (signUpData.session) {
           await refreshSession()
-          router.replace(ROUTE_ENTRY_FORM)
-          router.refresh()
+          window.location.assign(ROUTE_ENTRY_FORM)
           return
         }
 
-        setSignupHint(
-          "Аккаунт создан."
+        /**
+         * Logs showed: signIn "Invalid login credentials", then signUp success with user but
+         * no session — common for existing email (Supabase anti-enumeration). Such users often
+         * have `identities.length === 0`. Real new signups pending email usually have identities.
+         */
+        const idCount = signUpData.user?.identities?.length ?? 0
+        if (idCount === 0) {
+          setError("Неверный email или пароль.")
+          return
+        }
+
+        setError(
+          "Проверьте почту и перейдите по ссылке для подтверждения регистрации."
         )
         return
       }
@@ -175,11 +182,6 @@ export function LoginForm() {
           {error ? (
             <p className="text-destructive text-sm" role="alert">
               {error}
-            </p>
-          ) : null}
-          {signupHint ? (
-            <p className="text-muted-foreground text-sm" role="status">
-              {signupHint}
             </p>
           ) : null}
           <Button type="submit" className="w-full" disabled={loading}>
