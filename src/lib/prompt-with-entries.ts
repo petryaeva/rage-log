@@ -68,7 +68,8 @@ export async function completePromptWithEntries(
     return {
       ok: false,
       code: "config",
-      error: "GROQ_API_KEY не задан.",
+      error:
+        "Нет ключа API: задайте GROQ_API_KEY в .env или Vercel (допустимо имя OPENAI_API_KEY). Ключ: console.groq.com.",
     }
   }
 
