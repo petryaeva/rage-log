@@ -31,7 +31,7 @@ function shouldSkipSignUpAfterSignInError(message: string): boolean {
 
 export function LoginForm() {
   const router = useRouter()
-  const { session, isLoading: authLoading } = useAuth()
+  const { session, isLoading: authLoading, refreshSession } = useAuth()
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
   const [loading, setLoading] = React.useState(false)
@@ -69,6 +69,7 @@ export function LoginForm() {
         })
 
       if (!signInError && signInData.session) {
+        await refreshSession()
         router.replace(ROUTE_ENTRY_FORM)
         router.refresh()
         return
@@ -98,6 +99,7 @@ export function LoginForm() {
         }
 
         if (signUpData.session) {
+          await refreshSession()
           router.replace(ROUTE_ENTRY_FORM)
           router.refresh()
           return
