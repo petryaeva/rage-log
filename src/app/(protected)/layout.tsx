@@ -16,7 +16,7 @@ export default function ProtectedGroupLayout({
           <h1 className="font-heading text-lg font-semibold tracking-tight sm:text-xl">
             RageLog
           </h1>
-          <LogoutButton className="h-11 min-h-11 shrink-0 px-4 text-base sm:h-8 sm:min-h-8 sm:px-2.5 sm:text-sm" />
+          <LogoutButton className="h-11 min-h-11 shrink-0 px-4 sm:px-3" />
         </div>
         <AppNav />
         <div className="mt-5 flex flex-1 flex-col gap-5 sm:mt-6 sm:gap-6">

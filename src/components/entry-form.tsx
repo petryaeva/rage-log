@@ -16,6 +16,10 @@ import {
 import { Input } from "@/components/ui/input"
 import { Slider } from "@/components/ui/slider"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  mergeTranscript,
+  VoiceDictationButton,
+} from "@/components/voice-dictation-button"
 import { insertEntry } from "@/lib/entries"
 import { cn } from "@/lib/utils"
 
@@ -118,7 +122,7 @@ export function EntryForm() {
                 {error}
               </p>
             ) : null}
-            <div className="space-y-1.5 sm:space-y-2">
+            <div className="space-y-[5px]">
               <label className="text-sm font-medium" htmlFor="entry-datetime">
                 Дата и время
               </label>
@@ -134,14 +138,27 @@ export function EntryForm() {
                   setEpisodeLocal(e.target.value)
                 }}
                 disabled={submitting}
-                className="h-11 sm:h-10"
+                className="h-12"
                 required
               />
             </div>
-            <div className="space-y-1.5 sm:space-y-2">
-              <label className="text-sm font-medium" htmlFor="entry-notes">
-                Краткое описание
-              </label>
+            <div className="space-y-[5px]">
+              <div className="flex items-center justify-between gap-2">
+                <label
+                  className="text-sm font-medium"
+                  htmlFor="entry-notes"
+                >
+                  Краткое описание
+                </label>
+                <VoiceDictationButton
+                  fieldLabel="Краткое описание"
+                  disabled={submitting}
+                  onAppendText={(phrase) => {
+                    setSaved(false)
+                    setNotes((prev) => mergeTranscript(prev, phrase))
+                  }}
+                />
+              </div>
               <Textarea
                 id="entry-notes"
                 name="notes"
@@ -154,7 +171,7 @@ export function EntryForm() {
                 }}
                 required
                 disabled={submitting}
-                className="min-h-[4.25rem] py-2 sm:min-h-[7.5rem]"
+                className="min-h-[5.25rem] py-2.5 sm:min-h-[8rem]"
               />
             </div>
             <div className="space-y-2">
@@ -217,10 +234,23 @@ export function EntryForm() {
                 Насколько агрессивно вы себя вели (в словах или действиях)?
               </p>
             </div>
-            <div className="space-y-1.5 sm:space-y-2">
-              <label className="text-sm font-medium" htmlFor="entry-triggers">
-                Триггеры
-              </label>
+            <div className="space-y-[5px]">
+              <div className="flex items-center justify-between gap-2">
+                <label
+                  className="text-sm font-medium"
+                  htmlFor="entry-triggers"
+                >
+                  Триггеры
+                </label>
+                <VoiceDictationButton
+                  fieldLabel="Триггеры"
+                  disabled={submitting}
+                  onAppendText={(phrase) => {
+                    setSaved(false)
+                    setTriggers((prev) => mergeTranscript(prev, phrase))
+                  }}
+                />
+              </div>
               <Textarea
                 id="entry-triggers"
                 name="triggers"
@@ -232,13 +262,26 @@ export function EntryForm() {
                   setTriggers(e.target.value)
                 }}
                 disabled={submitting}
-                className="min-h-[3.5rem] resize-y py-2"
+                className="min-h-16 resize-y py-2.5"
               />
             </div>
-            <div className="space-y-1.5 sm:space-y-2">
-              <label className="text-sm font-medium" htmlFor="entry-factors">
-                Факторы
-              </label>
+            <div className="space-y-[5px]">
+              <div className="flex items-center justify-between gap-2">
+                <label
+                  className="text-sm font-medium"
+                  htmlFor="entry-factors"
+                >
+                  Факторы
+                </label>
+                <VoiceDictationButton
+                  fieldLabel="Факторы"
+                  disabled={submitting}
+                  onAppendText={(phrase) => {
+                    setSaved(false)
+                    setFactors((prev) => mergeTranscript(prev, phrase))
+                  }}
+                />
+              </div>
               <Textarea
                 id="entry-factors"
                 name="factors"
@@ -250,13 +293,23 @@ export function EntryForm() {
                   setFactors(e.target.value)
                 }}
                 disabled={submitting}
-                className="min-h-[3.5rem] resize-y py-2"
+                className="min-h-16 resize-y py-2.5"
               />
             </div>
-            <div className="space-y-1.5 sm:space-y-2">
-              <label className="text-sm font-medium" htmlFor="entry-outcome">
-                Итог
-              </label>
+            <div className="space-y-[5px]">
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-sm font-medium" htmlFor="entry-outcome">
+                  Итог
+                </label>
+                <VoiceDictationButton
+                  fieldLabel="Итог"
+                  disabled={submitting}
+                  onAppendText={(phrase) => {
+                    setSaved(false)
+                    setOutcome((prev) => mergeTranscript(prev, phrase))
+                  }}
+                />
+              </div>
               <Textarea
                 id="entry-outcome"
                 name="outcome"
@@ -268,7 +321,7 @@ export function EntryForm() {
                   setOutcome(e.target.value)
                 }}
                 disabled={submitting}
-                className="min-h-[3.5rem] resize-y py-2"
+                className="min-h-16 resize-y py-2.5"
               />
             </div>
           </CardContent>
@@ -281,7 +334,7 @@ export function EntryForm() {
       </form>
 
       <div
-        className="h-[calc(4.5rem+env(safe-area-inset-bottom,0px))] shrink-0 md:hidden"
+        className="h-[calc(5rem+env(safe-area-inset-bottom,0px))] shrink-0 md:hidden"
         aria-hidden
       />
 

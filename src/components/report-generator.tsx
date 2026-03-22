@@ -155,7 +155,7 @@ export function ReportGenerator() {
                   setRange((r) => ({ ...r, from: e.target.value }))
                 }
                 disabled={disabled}
-                className="h-11 sm:h-10"
+                className="h-12"
               />
             </div>
             <div className="space-y-1.5">
@@ -170,7 +170,7 @@ export function ReportGenerator() {
                   setRange((r) => ({ ...r, to: e.target.value }))
                 }
                 disabled={disabled}
-                className="h-11 sm:h-10"
+                className="h-12"
               />
             </div>
           </div>
@@ -203,7 +203,7 @@ export function ReportGenerator() {
             type="submit"
             size="touch"
             disabled={disabled}
-            className="w-full sm:h-9 sm:min-h-9 sm:w-auto sm:rounded-lg sm:px-3 sm:text-sm"
+            className="w-full sm:h-11 sm:min-h-11 sm:w-auto sm:rounded-lg sm:px-4 sm:text-base"
           >
             {isGenerating ? "Генерация…" : "Сгенерировать отчёт"}
           </Button>

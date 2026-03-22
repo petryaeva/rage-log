@@ -4,7 +4,7 @@ import { parseEntriesFromRequestBody } from "@/lib/parse-entry-body"
 import { completePromptWithEntries } from "@/lib/prompt-with-entries"
 import { DEFAULT_WEEKLY_REPORT_PROMPT } from "@/lib/report-prompt"
 import { insertReport } from "@/lib/reports"
-import { createSupabaseServerClient } from "@/lib/supabase-server"
+import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server"
 import type { Entry } from "@/types/entry"
 
 function statusForResult(
@@ -92,11 +92,18 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const supabase = await createSupabaseServerClient()
-  if (supabase) {
+  const response = new NextResponse(result.text, {
+    status: 200,
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  })
+
+  const supabaseCtx = createSupabaseRouteHandlerClient(request)
+  if (supabaseCtx) {
+    const { supabase, applyPendingCookies } = supabaseCtx
     const {
       data: { user },
     } = await supabase.auth.getUser()
+
     if (user) {
       const { error: insertError } = await insertReport(
         {
@@ -109,12 +116,16 @@ export async function POST(request: NextRequest) {
       )
       if (insertError) {
         console.error("[report] insert reports:", insertError.message)
+        response.headers.set("X-Report-Saved", "0")
       }
+    } else {
+      console.warn(
+        "[report] no auth user in request; report text returned but not saved (sign in and try again)"
+      )
     }
+
+    applyPendingCookies(response)
   }
 
-  return new NextResponse(result.text, {
-    status: 200,
-    headers: { "Content-Type": "text/plain; charset=utf-8" },
-  })
+  return response
 }
