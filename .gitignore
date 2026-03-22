@@ -9,6 +9,12 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+/.agents
+/skills-lock.json
+/supabase
+/.claude
+/.mcp.json
+
 
 # testing
 /coverage

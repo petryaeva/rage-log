@@ -28,7 +28,7 @@ export function LoginForm() {
       const supabase = getSupabaseClient()
       if (!supabase) {
         setError(
-          "Supabase is not configured. In .env.local, set both variables to non-empty values from Supabase → Settings → API (URL and anon key), save the file, then restart the dev server."
+          "Supabase не настроен. В .env.local укажите непустые NEXT_PUBLIC_SUPABASE_URL и NEXT_PUBLIC_SUPABASE_ANON_KEY из Supabase → Settings → API, сохраните файл и перезапустите сервер разработки."
         )
         return
       }
@@ -51,21 +51,21 @@ export function LoginForm() {
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
-        <CardTitle>Log in</CardTitle>
+        <CardTitle>Вход</CardTitle>
         <CardDescription>
-          Enter your email and we&apos;ll send you a magic link.
+          Укажите email — мы отправим ссылку для входа.
         </CardDescription>
       </CardHeader>
       <CardContent>
         {sent ? (
           <p className="text-sm text-muted-foreground" role="status">
-            Magic link sent
+            Ссылка отправлена
           </p>
         ) : (
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="login-email">
-                Email
+                Электронная почта
               </label>
               <Input
                 id="login-email"
@@ -85,7 +85,7 @@ export function LoginForm() {
               </p>
             ) : null}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Sending…" : "Send magic link"}
+              {loading ? "Отправка…" : "Отправить ссылку"}
             </Button>
           </form>
         )}

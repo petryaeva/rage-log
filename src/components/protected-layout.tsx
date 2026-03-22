@@ -19,7 +19,7 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
   if (isLoading) {
     return (
       <div className="flex min-h-full flex-1 flex-col items-center justify-center p-8">
-        <p className="text-muted-foreground text-sm">Loading…</p>
+        <p className="text-muted-foreground text-sm">Загрузка…</p>
       </div>
     )
   }

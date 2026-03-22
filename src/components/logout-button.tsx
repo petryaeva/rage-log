@@ -16,7 +16,7 @@ export function LogoutButton({
   className,
   variant = "outline",
   disabled,
-  children = "Log out",
+  children = "Выйти",
   ...props
 }: LogoutButtonProps) {
   const router = useRouter()
@@ -44,7 +44,7 @@ export function LogoutButton({
       onClick={handleLogout}
       {...props}
     >
-      {loading ? "Signing out…" : children}
+      {loading ? "Выход…" : children}
     </Button>
   )
 }

@@ -1,58 +1,101 @@
 "use client"
 
 import * as React from "react"
-import { Slider as SliderPrimitive } from "@base-ui/react/slider"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Single-thumb slider using a native range input (no `<script>`), compatible with React 19.
+ * Accepts `value` / `defaultValue` as a one-element array, matching the previous Base UI API.
+ */
+export type SliderProps = {
+  className?: string
+  value?: number | readonly number[]
+  defaultValue?: number | readonly number[]
+  onValueChange?: (
+    value: number | readonly number[],
+    eventDetails?: unknown
+  ) => void
+  min?: number
+  max?: number
+  step?: number
+  disabled?: boolean
+  id?: string
+  name?: string
+  "aria-label"?: string
+}
+
+function toScalar(
+  v: number | readonly number[] | undefined,
+  fallback: number
+): number {
+  if (v === undefined) return fallback
+  if (typeof v === "number") return v
+  if (Array.isArray(v)) return v.length > 0 ? v[0]! : fallback
+  return fallback
+}
+
 function Slider({
   className,
-  defaultValue,
   value,
+  defaultValue,
+  onValueChange,
   min = 0,
   max = 100,
-  ...props
-}: SliderPrimitive.Root.Props) {
-  const _values = React.useMemo(
-    () =>
-      Array.isArray(value)
-        ? value
-        : Array.isArray(defaultValue)
-          ? defaultValue
-          : [min, max],
-    [value, defaultValue, min, max]
+  step = 1,
+  disabled,
+  id,
+  name,
+  "aria-label": ariaLabel,
+}: SliderProps) {
+  const fallback = React.useMemo(
+    () => Math.round((min + max) / 2),
+    [min, max]
   )
 
+  const isControlled = value !== undefined
+  const [uncontrolled, setUncontrolled] = React.useState(() =>
+    toScalar(defaultValue, fallback)
+  )
+
+  const current = isControlled ? toScalar(value, fallback) : uncontrolled
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const next = Number(e.target.value)
+    if (!isControlled) setUncontrolled(next)
+    onValueChange?.([next], {})
+  }
+
   return (
-    <SliderPrimitive.Root
-      className={cn("data-horizontal:w-full data-vertical:h-full", className)}
+    <div
+      className={cn(
+        "relative flex w-full touch-none items-center py-1 select-none data-[disabled]:opacity-50",
+        className
+      )}
       data-slot="slider"
-      defaultValue={defaultValue}
-      value={value}
-      min={min}
-      max={max}
-      thumbAlignment="edge"
-      {...props}
+      data-disabled={disabled ? "" : undefined}
     >
-      <SliderPrimitive.Control className="relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:min-h-40 data-vertical:w-auto data-vertical:flex-col">
-        <SliderPrimitive.Track
-          data-slot="slider-track"
-          className="relative grow overflow-hidden rounded-full bg-muted select-none data-horizontal:h-1 data-horizontal:w-full data-vertical:h-full data-vertical:w-1"
-        >
-          <SliderPrimitive.Indicator
-            data-slot="slider-range"
-            className="bg-primary select-none data-horizontal:h-full data-vertical:w-full"
-          />
-        </SliderPrimitive.Track>
-        {Array.from({ length: _values.length }, (_, index) => (
-          <SliderPrimitive.Thumb
-            data-slot="slider-thumb"
-            key={index}
-            className="relative block size-3 shrink-0 rounded-full border border-ring bg-white ring-ring/50 transition-[color,box-shadow] select-none after:absolute after:-inset-2 hover:ring-3 focus-visible:ring-3 focus-visible:outline-hidden active:ring-3 disabled:pointer-events-none disabled:opacity-50"
-          />
-        ))}
-      </SliderPrimitive.Control>
-    </SliderPrimitive.Root>
+      <input
+        id={id}
+        name={name}
+        aria-label={ariaLabel}
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={current}
+        disabled={disabled}
+        onChange={handleChange}
+        className={cn(
+          "h-1 w-full cursor-pointer appearance-none rounded-full bg-muted",
+          "[&::-webkit-slider-runnable-track]:h-1 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-muted",
+          "[&::-moz-range-track]:h-1 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-muted",
+          "[&::-webkit-slider-thumb]:relative [&::-webkit-slider-thumb]:block [&::-webkit-slider-thumb]:size-3 [&::-webkit-slider-thumb]:shrink-0 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-ring [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-sm",
+          "[&::-moz-range-thumb]:size-3 [&::-moz-range-thumb]:shrink-0 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-ring [&::-moz-range-thumb]:bg-white",
+          "disabled:pointer-events-none disabled:opacity-50"
+        )}
+      />
+    </div>
   )
 }
 
