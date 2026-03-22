@@ -51,7 +51,7 @@ function rowToReport(row: ReportRow): Report {
 
 /**
  * Inserts into `reports`. Must use a Supabase client that carries the user JWT (e.g.
- * {@link createSupabaseRouteHandlerClient} in Route Handlers, or {@link createSupabaseServerClient} in Server Actions).
+ * {@link createSupabaseRouteHandlerClient} in Route Handlers).
  */
 export async function insertReport(
   input: InsertReportInput,

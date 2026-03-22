@@ -6,13 +6,8 @@ let client: OpenAI | undefined
 
 /** Groq key; `OPENAI_API_KEY` is accepted so existing Vercel/.env names keep working after the provider switch. */
 function getGroqApiKey(): string | undefined {
-  const k =
-    process.env.GROQ_API_KEY?.trim() || process.env.OPENAI_API_KEY?.trim()
+  const k = process.env.GROQ_API_KEY?.trim()
   return k || undefined
-}
-
-function isGroqConfigured(): boolean {
-  return Boolean(getGroqApiKey())
 }
 
 /**
