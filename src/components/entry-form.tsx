@@ -126,6 +126,8 @@ export function EntryForm() {
                 id="entry-datetime"
                 name="episode_at"
                 type="datetime-local"
+                placeholder="Например: 18 марта"
+                title="Например: 18 марта"
                 value={episodeLocal}
                 onChange={(e) => {
                   setSaved(false)
@@ -143,7 +145,7 @@ export function EntryForm() {
               <Textarea
                 id="entry-notes"
                 name="notes"
-                placeholder="Что произошло…"
+                placeholder="Кратко опишите, что произошло. Где вы были? Что делали другие? Что именно вас задело? Пример: стоял в очереди, обслуживание шло медленно, продавец отвлекался на разговоры"
                 rows={3}
                 value={notes}
                 onChange={(e) => {
@@ -181,6 +183,9 @@ export function EntryForm() {
                 disabled={submitting}
                 className="py-1"
               />
+              <p className="text-muted-foreground text-xs leading-snug">
+                Насколько вы были эмоционально напряжены в моменте?
+              </p>
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-3">
@@ -208,6 +213,9 @@ export function EntryForm() {
                 disabled={submitting}
                 className="py-1"
               />
+              <p className="text-muted-foreground text-xs leading-snug">
+                Насколько агрессивно вы себя вели (в словах или действиях)?
+              </p>
             </div>
             <div className="space-y-1.5 sm:space-y-2">
               <label className="text-sm font-medium" htmlFor="entry-triggers">
@@ -216,7 +224,7 @@ export function EntryForm() {
               <Textarea
                 id="entry-triggers"
                 name="triggers"
-                placeholder="Необязательно"
+                placeholder='Какие мысли возникли в моменте? Часто это утверждения с «должен», обвинения или ожидания. Пример: "они должны работать быстрее", "это их вина"'
                 rows={2}
                 value={triggers}
                 onChange={(e) => {
@@ -234,7 +242,7 @@ export function EntryForm() {
               <Textarea
                 id="entry-factors"
                 name="factors"
-                placeholder="Необязательно"
+                placeholder="Что могло повлиять на ваше состояние до события? Например: усталость, стресс, тревога, напряжение, плохой день"
                 rows={2}
                 value={factors}
                 onChange={(e) => {
@@ -252,7 +260,7 @@ export function EntryForm() {
               <Textarea
                 id="entry-outcome"
                 name="outcome"
-                placeholder="Необязательно"
+                placeholder="Чем закончилась ситуация и что вы почувствовали после? Пример: облегчения не было, позже появилось чувство вины"
                 rows={2}
                 value={outcome}
                 onChange={(e) => {
