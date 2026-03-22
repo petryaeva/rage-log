@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 const SCALE_MIN = 1
 const SCALE_MAX = 10
 
+/** Локальные ползунки без сохранения в БД (быстрый самообзор). */
 type QuickEntryProps = {
   className?: string
 }
@@ -18,11 +19,11 @@ export function QuickEntry({ className }: QuickEntryProps) {
   const [aggression, setAggression] = React.useState([5])
 
   return (
-    <Card className={cn("w-full max-w-lg py-3", className)}>
-      <CardHeader className="px-4 pb-0 pt-3">
+    <Card className={cn("w-full max-w-lg py-2 shadow-sm sm:py-3", className)}>
+      <CardHeader className="px-4 pb-0 pt-2 sm:pt-3">
         <CardTitle className="text-base">Быстрая оценка</CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-5 px-4 sm:grid-cols-2 sm:gap-4">
+      <CardContent className="grid gap-4 px-4 sm:grid-cols-2 sm:gap-4">
         <div className="space-y-2">
           <div className="flex items-baseline justify-between gap-2">
             <span className="text-sm font-medium">

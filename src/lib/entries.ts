@@ -77,21 +77,37 @@ export async function insertEntry(
   return { data: rowToEntry(data as EntryRow), error: null }
 }
 
+/** ISO timestamp for `created_at >= …` (скользящие последние `days` суток). */
+export function getCreatedAfterRollingDaysAgo(days: number): string {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+}
+
+export type FetchEntriesOptions = {
+  /** Оставить только строки с `created_at` не раньше этой метки (ISO). */
+  createdAfter?: string
+}
+
 /** Lists entries for a user, newest first. */
 export async function fetchEntriesForUser(
   userId: string,
-  client?: SupabaseClient | null
+  client?: SupabaseClient | null,
+  options?: FetchEntriesOptions
 ): Promise<{ data: Entry[] | null; error: PostgrestError | null }> {
   const supabase = client ?? getSupabaseClient()
   if (!supabase) {
     return { data: null, error: notConfiguredError() }
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("entries")
     .select("*")
     .eq("user_id", userId)
-    .order("created_at", { ascending: false })
+
+  if (options?.createdAfter) {
+    query = query.gte("created_at", options.createdAfter)
+  }
+
+  const { data, error } = await query.order("created_at", { ascending: false })
 
   if (error) {
     return { data: null, error }
@@ -103,5 +119,3 @@ export async function fetchEntriesForUser(
   }
 }
 
-/** Alias for {@link insertEntry} (same behavior). */
-export const createEntry = insertEntry

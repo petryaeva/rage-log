@@ -16,11 +16,13 @@ import {
 import { Input } from "@/components/ui/input"
 import { Slider } from "@/components/ui/slider"
 import { Textarea } from "@/components/ui/textarea"
-import { entriesQueryKey } from "@/hooks/use-entries"
-import { createEntry } from "@/lib/entries"
+import { insertEntry } from "@/lib/entries"
+import { cn } from "@/lib/utils"
 
 const INTENSITY_MIN = 1
 const INTENSITY_MAX = 10
+
+const ENTRY_FORM_ID = "rage-entry-form"
 
 export function EntryForm() {
   const queryClient = useQueryClient()
@@ -47,7 +49,7 @@ export function EntryForm() {
     setSaved(false)
     setSubmitting(true)
     try {
-      const { error: insertError } = await createEntry({
+      const { error: insertError } = await insertEntry({
         userId,
         notes: notes.trim(),
         intensity: intensity[0],
@@ -57,7 +59,10 @@ export function EntryForm() {
         setError(insertError.message)
         return
       }
-      await queryClient.invalidateQueries({ queryKey: entriesQueryKey(userId) })
+      await queryClient.invalidateQueries({
+        queryKey: ["entries", userId],
+        exact: false,
+      })
       setSaved(true)
       setNotes("")
       setTrigger("")
@@ -68,95 +73,135 @@ export function EntryForm() {
   }
 
   return (
-    <Card className="w-full max-w-lg">
-      <CardHeader>
-        <CardTitle>Запись эпизода</CardTitle>
-        <CardDescription>
-          Кратко опишите событие, оцените степень возбуждения и укажите факторы и
-          итог.
-        </CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="flex flex-col gap-6">
-          {saved ? (
-            <p className="text-sm text-muted-foreground" role="status">
-              Запись сохранена
-            </p>
-          ) : null}
-          {error ? (
-            <p className="text-destructive text-sm" role="alert">
-              {error}
-            </p>
-          ) : null}
-          <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="entry-notes">
-              Краткое описание события
-            </label>
-            <Textarea
-              id="entry-notes"
-              name="notes"
-              placeholder="Что произошло…"
-              rows={5}
-              value={notes}
-              onChange={(e) => {
-                setSaved(false)
-                setNotes(e.target.value)
-              }}
-              required
-              disabled={submitting}
-            />
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-4">
-              <label className="text-sm font-medium" htmlFor="entry-intensity">
-                Степень возбуждения ({INTENSITY_MIN}–{INTENSITY_MAX})
+    <>
+      <form
+        id={ENTRY_FORM_ID}
+        className="contents"
+        onSubmit={handleSubmit}
+      >
+        <Card className="w-full max-w-lg shadow-sm">
+          <CardHeader className="px-4 pb-2 pt-3 sm:px-6 sm:pb-3 sm:pt-4">
+            <CardTitle className="text-base sm:text-lg">Запись эпизода</CardTitle>
+            <CardDescription className="hidden text-sm leading-snug sm:block">
+              Кратко опишите событие, оцените степень возбуждения и укажите
+              факторы и итог.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 px-4 pb-1 sm:gap-5 sm:px-6 sm:pb-2">
+            {saved ? (
+              <p className="text-muted-foreground text-sm" role="status">
+                Запись сохранена
+              </p>
+            ) : null}
+            {error ? (
+              <p className="text-destructive text-sm" role="alert">
+                {error}
+              </p>
+            ) : null}
+            <div className="space-y-1.5 sm:space-y-2">
+              <label className="text-sm font-medium" htmlFor="entry-notes">
+                Краткое описание события
               </label>
-              <span className="text-muted-foreground text-sm tabular-nums">
-                {intensity[0]}
-              </span>
+              <Textarea
+                id="entry-notes"
+                name="notes"
+                placeholder="Что произошло…"
+                rows={3}
+                value={notes}
+                onChange={(e) => {
+                  setSaved(false)
+                  setNotes(e.target.value)
+                }}
+                required
+                disabled={submitting}
+                className="min-h-[4.25rem] py-2 sm:min-h-[7.5rem]"
+              />
             </div>
-            <Slider
-              id="entry-intensity"
-              value={intensity}
-              onValueChange={(value) => {
-                setSaved(false)
-                setIntensity(Array.isArray(value) ? [...value] : [value])
-              }}
-              min={INTENSITY_MIN}
-              max={INTENSITY_MAX}
-              step={1}
-              aria-label="Степень возбуждения"
-              disabled={submitting}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="entry-trigger">
-              Предшествующие факторы, мысли-триггеры, результат эпизода
-            </label>
-            <p className="text-muted-foreground text-xs leading-snug">
-              Примеры: боль, тревога, мышечное напряжение; «должен», обвиняющие
-              утверждения; как завершился эпизод.
-            </p>
-            <Input
-              id="entry-trigger"
-              name="trigger"
-              type="text"
-              placeholder="Необязательно"
-              value={trigger}
-              onChange={(e) => {
-                setSaved(false)
-                setTrigger(e.target.value)
-              }}
-              disabled={submitting}
-            />
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-end border-t bg-muted/50">
-          <Button type="submit" disabled={!canSubmit}>
-            {submitting ? "Сохранение…" : "Сохранить запись"}
-          </Button>
-        </CardFooter>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <label
+                  className="text-sm font-medium leading-tight"
+                  htmlFor="entry-intensity"
+                >
+                  Степень возбуждения ({INTENSITY_MIN}–{INTENSITY_MAX})
+                </label>
+                <span className="text-muted-foreground text-sm tabular-nums">
+                  {intensity[0]}
+                </span>
+              </div>
+              <Slider
+                id="entry-intensity"
+                value={intensity}
+                onValueChange={(value) => {
+                  setSaved(false)
+                  setIntensity(Array.isArray(value) ? [...value] : [value])
+                }}
+                min={INTENSITY_MIN}
+                max={INTENSITY_MAX}
+                step={1}
+                aria-label="Степень возбуждения"
+                disabled={submitting}
+                className="py-1"
+              />
+            </div>
+            <div className="space-y-1.5 sm:space-y-2">
+              <label className="text-sm font-medium" htmlFor="entry-trigger">
+                Триггеры и итог
+              </label>
+              <p className="text-muted-foreground hidden text-xs leading-snug sm:block">
+                Примеры: боль, тревога, мышечное напряжение; «должен»,
+                обвиняющие утверждения; как завершился эпизод.
+              </p>
+              <Input
+                id="entry-trigger"
+                name="trigger"
+                type="text"
+                placeholder="Необязательно"
+                value={trigger}
+                onChange={(e) => {
+                  setSaved(false)
+                  setTrigger(e.target.value)
+                }}
+                disabled={submitting}
+                className="h-11 sm:h-9"
+              />
+            </div>
+          </CardContent>
+          <CardFooter className="hidden border-t bg-muted/40 px-6 py-3 md:flex md:justify-end">
+            <Button type="submit" disabled={!canSubmit}>
+              {submitting ? "Сохранение…" : "Сохранить запись"}
+            </Button>
+          </CardFooter>
+        </Card>
       </form>
-    </Card>
+
+      {/* Spacer so list scroll clears the fixed thumb bar */}
+      <div
+        className="h-[calc(4.5rem+env(safe-area-inset-bottom,0px))] shrink-0 md:hidden"
+        aria-hidden
+      />
+
+      <div
+        className={cn(
+          "md:hidden",
+          "fixed inset-x-0 bottom-0 z-50",
+          "border-t border-border bg-background/95 backdrop-blur-md",
+          "pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pt-2",
+          "shadow-[0_-8px_30px_-12px_rgba(0,0,0,0.12)]"
+        )}
+      >
+        <div className="mx-auto w-full max-w-lg px-3">
+          <Button
+            type="submit"
+            form={ENTRY_FORM_ID}
+            size="touch"
+            className="w-full"
+            disabled={!canSubmit}
+          >
+            {submitting ? "Сохранение…" : "Сохранить"}
+          </Button>
+        </div>
+      </div>
+    </>
   )
 }
