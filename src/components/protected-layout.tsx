@@ -4,6 +4,7 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 
 import { useAuth } from "@/components/auth-provider"
+import { ROUTE_LOGIN } from "@/lib/routes"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export function ProtectedLayout({ children }: { children: React.ReactNode }) {
@@ -13,7 +14,7 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     if (isLoading) return
     if (!session) {
-      router.replace("/login")
+      router.replace(ROUTE_LOGIN)
     }
   }, [session, isLoading, router])
 

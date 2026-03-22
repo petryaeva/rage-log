@@ -4,6 +4,7 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
+import { ROUTE_LOGIN } from "@/lib/routes"
 import { getSupabaseClient } from "@/lib/supabaseClient"
 import { cn } from "@/lib/utils"
 
@@ -29,7 +30,7 @@ export function LogoutButton({
     setLoading(true)
     try {
       await supabase.auth.signOut()
-      router.replace("/login")
+      router.replace(ROUTE_LOGIN)
     } finally {
       setLoading(false)
     }

@@ -15,20 +15,20 @@ import { Input } from "@/components/ui/input"
 import { useAuth } from "@/components/auth-provider"
 import {
   authErrorCode,
-  mapSignInError,
+  mapSignUpError,
   normalizeEmail,
-  trimEmail,
 } from "@/lib/auth-helpers"
 import { getSupabaseClient } from "@/lib/supabaseClient"
-import { ROUTE_ENTRY_FORM, ROUTE_REGISTER } from "@/lib/routes"
+import { ROUTE_ENTRY_FORM, ROUTE_LOGIN } from "@/lib/routes"
 
-export function LoginForm() {
+export function RegisterForm() {
   const router = useRouter()
   const { session, isLoading: authLoading, refreshSession } = useAuth()
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const [info, setInfo] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     if (authLoading || !session) return
@@ -38,6 +38,7 @@ export function LoginForm() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
+    setInfo(null)
     setLoading(true)
     try {
       const supabase = getSupabaseClient()
@@ -54,53 +55,31 @@ export function LoginForm() {
       }
 
       const emailNorm = normalizeEmail(email)
-
-      const first = await supabase.auth.signInWithPassword({
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email: emailNorm,
         password,
       })
-      let signInData = first.data
-      let signInError = first.error
 
-      if (
-        signInError &&
-        authErrorCode(signInError) === "invalid_credentials" &&
-        trimEmail(email) !== emailNorm
-      ) {
-        const second = await supabase.auth.signInWithPassword({
-          email: trimEmail(email),
-          password,
-        })
-        if (!second.error && second.data.session) {
-          signInData = second.data
-          signInError = second.error
+      if (signUpError) {
+        const raw = signUpError.message
+        const code = authErrorCode(signUpError)
+        if (/banned|rate|429|too many|attempt/i.test(raw)) {
+          setError(raw)
+          return
         }
+        setError(mapSignUpError(raw, code))
+        return
       }
 
-      if (!signInError && signInData.session) {
+      if (data.session) {
         await refreshSession()
         window.location.assign(ROUTE_ENTRY_FORM)
         return
       }
 
-      if (signInError) {
-        const raw = signInError.message
-        const code = authErrorCode(signInError)
-        if (/confirm|verify|not confirmed|unconfirmed/i.test(raw)) {
-          setError(raw)
-          return
-        }
-        if (/banned|rate|429|too many|attempt/i.test(raw)) {
-          setError(raw)
-          return
-        }
-        setError(mapSignInError(raw, code))
-        return
-      }
-
-      if (!signInData.session) {
-        setError("Не удалось войти. Попробуйте ещё раз.")
-      }
+      setInfo(
+        "Аккаунт создан. Проверьте почту и перейдите по ссылке."
+      )
     } finally {
       setLoading(false)
     }
@@ -110,7 +89,7 @@ export function LoginForm() {
     return (
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Вход</CardTitle>
+          <CardTitle>Регистрация</CardTitle>
         </CardHeader>
       </Card>
     )
@@ -123,16 +102,16 @@ export function LoginForm() {
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
-        <CardTitle>Вход</CardTitle>
+        <CardTitle>Регистрация</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="login-email">
+            <label className="text-sm font-medium" htmlFor="register-email">
               Электронная почта
             </label>
             <Input
-              id="login-email"
+              id="register-email"
               type="email"
               name="email"
               autoComplete="email"
@@ -144,14 +123,14 @@ export function LoginForm() {
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="login-password">
+            <label className="text-sm font-medium" htmlFor="register-password">
               Пароль
             </label>
             <Input
-              id="login-password"
+              id="register-password"
               type="password"
               name="password"
-              autoComplete="current-password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -164,17 +143,22 @@ export function LoginForm() {
               {error}
             </p>
           ) : null}
+          {info ? (
+            <p className="text-muted-foreground text-sm" role="status">
+              {info}
+            </p>
+          ) : null}
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Продолжение…" : "Войти"}
+            {loading ? "Создание…" : "Создать аккаунт"}
           </Button>
         </form>
         <p className="text-muted-foreground text-center text-sm">
-          Нет аккаунта?{" "}
+          Уже есть аккаунт?{" "}
           <Link
-            href={ROUTE_REGISTER}
+            href={ROUTE_LOGIN}
             className="text-foreground font-medium underline underline-offset-4"
           >
-            Регистрация
+            Войти
           </Link>
         </p>
       </CardContent>
