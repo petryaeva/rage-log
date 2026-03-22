@@ -1,4 +1,4 @@
-import { getOpenAIClient } from "@/lib/openai"
+import { getGroqClient } from "@/lib/groq"
 import type { Entry } from "@/types/entry"
 
 const MAX_PROMPT_CHARS = 16_000
@@ -41,7 +41,7 @@ export type PromptWithEntriesResult =
     }
 
 /**
- * Sends `prompt` and journal `entries` to the configured OpenAI chat model.
+ * Sends `prompt` and journal `entries` to the configured Groq chat model.
  * Returns assistant text or a short error message.
  */
 export async function completePromptWithEntries(
@@ -63,12 +63,12 @@ export async function completePromptWithEntries(
     return { ok: false, code: "validation", error: "Слишком много записей." }
   }
 
-  const openai = getOpenAIClient()
-  if (!openai) {
+  const groq = getGroqClient()
+  if (!groq) {
     return {
       ok: false,
       code: "config",
-      error: "OPENAI_API_KEY не задан.",
+      error: "GROQ_API_KEY не задан.",
     }
   }
 
@@ -80,8 +80,9 @@ export async function completePromptWithEntries(
   const userContent = `${trimmed}\n\n${entriesBlock}`
 
   try {
-    const model = process.env.OPENAI_MODEL?.trim() || "gpt-4o-mini"
-    const completion = await openai.chat.completions.create({
+    const model =
+      process.env.GROQ_MODEL?.trim() || "llama-3.3-70b-versatile"
+    const completion = await groq.chat.completions.create({
       model,
       messages: [
         {
@@ -103,7 +104,7 @@ export async function completePromptWithEntries(
     }
     return { ok: true, text }
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Ошибка OpenAI."
+    const message = e instanceof Error ? e.message : "Ошибка Groq."
     return { ok: false, code: "upstream", error: message }
   }
 }
