@@ -8,7 +8,11 @@ export type InsertEntryInput = {
   userId: string
   notes: string
   intensity?: number | null
-  trigger?: string | null
+  aggression?: number | null
+  triggers?: string | null
+  factors?: string | null
+  outcome?: string | null
+  episodeAt?: string | null
 }
 
 type EntryRow = {
@@ -16,7 +20,12 @@ type EntryRow = {
   user_id: string
   notes: string
   intensity: number | null
+  aggression: number | null
   trigger: string | null
+  triggers: string | null
+  factors: string | null
+  outcome: string | null
+  episode_at: string | null
   created_at: string
   updated_at: string
 }
@@ -27,7 +36,12 @@ function rowToEntry(row: EntryRow): Entry {
     userId: row.user_id,
     notes: row.notes,
     intensity: row.intensity,
+    aggression: row.aggression,
     trigger: row.trigger,
+    triggers: row.triggers,
+    factors: row.factors,
+    outcome: row.outcome,
+    episodeAt: row.episode_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -47,8 +61,6 @@ function notConfiguredError(): PostgrestError {
 /**
  * Inserts a row into the `entries` table and returns the mapped {@link Entry}.
  * Uses {@link getSupabaseClient} when `client` is omitted (typical in client components).
- *
- * Table columns: `id`, `user_id`, `notes`, `intensity`, `trigger`, `created_at`, `updated_at`.
  */
 export async function insertEntry(
   input: InsertEntryInput,
@@ -59,13 +71,19 @@ export async function insertEntry(
     return { data: null, error: notConfiguredError() }
   }
 
+  const triggers = input.triggers?.trim() ? input.triggers.trim() : null
   const { data, error } = await supabase
     .from("entries")
     .insert({
       user_id: input.userId,
       notes: input.notes,
       intensity: input.intensity ?? null,
-      trigger: input.trigger ?? null,
+      aggression: input.aggression ?? null,
+      trigger: triggers,
+      triggers,
+      factors: input.factors?.trim() ? input.factors.trim() : null,
+      outcome: input.outcome?.trim() ? input.outcome.trim() : null,
+      episode_at: input.episodeAt ?? null,
     })
     .select()
     .single()
@@ -85,6 +103,8 @@ export function getCreatedAfterRollingDaysAgo(days: number): string {
 export type FetchEntriesOptions = {
   /** Оставить только строки с `created_at` не раньше этой метки (ISO). */
   createdAfter?: string
+  /** Оставить только строки с `created_at` не позже этой метки (ISO). */
+  createdBefore?: string
 }
 
 /** Lists entries for a user, newest first. */
@@ -106,6 +126,9 @@ export async function fetchEntriesForUser(
   if (options?.createdAfter) {
     query = query.gte("created_at", options.createdAfter)
   }
+  if (options?.createdBefore) {
+    query = query.lte("created_at", options.createdBefore)
+  }
 
   const { data, error } = await query.order("created_at", { ascending: false })
 
@@ -118,4 +141,3 @@ export async function fetchEntriesForUser(
     error: null,
   }
 }
-

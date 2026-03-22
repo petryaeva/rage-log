@@ -24,8 +24,13 @@ type EntryCardProps = {
 }
 
 export function EntryCard({ entry, className }: EntryCardProps) {
-  const hasMeta =
-    entry.intensity != null || (entry.trigger != null && entry.trigger !== "")
+  const whenIso = entry.episodeAt || entry.createdAt
+  const triggersText = (entry.triggers ?? entry.trigger)?.trim()
+  const factorsText = entry.factors?.trim()
+  const outcomeText = entry.outcome?.trim()
+  const hasChips =
+    entry.intensity != null ||
+    entry.aggression != null
 
   return (
     <Card
@@ -38,20 +43,46 @@ export function EntryCard({ entry, className }: EntryCardProps) {
       <CardHeader className="pb-0 pt-3">
         <time
           className="text-[11px] font-medium tracking-wide text-muted-foreground tabular-nums"
-          dateTime={entry.createdAt}
+          dateTime={whenIso}
         >
-          Дата и время: {formatWhen(entry.createdAt)}
+          Дата и время: {formatWhen(whenIso)}
         </time>
       </CardHeader>
-      <CardContent className="space-y-1.5 px-4 pb-4 pt-2">
-        <p className="text-muted-foreground text-xs font-medium">
-          Краткое описание события
-        </p>
-        <p className="text-[15px] leading-snug tracking-tight whitespace-pre-wrap text-foreground">
-          {entry.notes}
-        </p>
+      <CardContent className="space-y-3 px-4 pb-2 pt-2">
+        <div className="space-y-1.5">
+          <p className="text-muted-foreground text-xs font-medium">
+            Краткое описание события
+          </p>
+          <p className="text-[15px] leading-snug tracking-tight whitespace-pre-wrap text-foreground">
+            {entry.notes}
+          </p>
+        </div>
+        {triggersText ? (
+          <div className="space-y-1">
+            <p className="text-muted-foreground text-xs font-medium">Триггеры</p>
+            <p className="text-sm leading-snug whitespace-pre-wrap text-foreground">
+              {triggersText}
+            </p>
+          </div>
+        ) : null}
+        {factorsText ? (
+          <div className="space-y-1">
+            <p className="text-muted-foreground text-xs font-medium">Факторы</p>
+            <p className="text-sm leading-snug whitespace-pre-wrap text-foreground">
+              {factorsText}
+            </p>
+          </div>
+        ) : null}
+        {outcomeText ? (
+          <div className="space-y-1">
+            <p className="text-muted-foreground text-xs font-medium">Итог</p>
+            <p className="text-sm leading-snug whitespace-pre-wrap text-foreground">
+              {outcomeText}
+            </p>
+          </div>
+        ) : null}
       </CardContent>
-      {hasMeta ? (
+      {hasChips ? (
         <CardFooter className="gap-2 border-t border-border/50 bg-muted/25 px-4 py-2.5">
           <div className="flex flex-wrap gap-2">
             {entry.intensity != null ? (
@@ -59,9 +90,9 @@ export function EntryCard({ entry, className }: EntryCardProps) {
                 Возбуждение: {entry.intensity}/10
               </span>
             ) : null}
-            {entry.trigger ? (
-              <span className="inline-flex max-w-full items-center rounded-full bg-background/80 px-2.5 py-0.5 text-xs text-muted-foreground ring-1 ring-border/60">
-                <span className="truncate">Факторы и итог: {entry.trigger}</span>
+            {entry.aggression != null ? (
+              <span className="inline-flex items-center rounded-full bg-background/80 px-2.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground ring-1 ring-border/60">
+                Агрессия: {entry.aggression}/10
               </span>
             ) : null}
           </div>

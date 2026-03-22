@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 
 import { parseEntriesFromRequestBody } from "@/lib/parse-entry-body"
 import { completePromptWithEntries } from "@/lib/prompt-with-entries"
+import { DEFAULT_WEEKLY_REPORT_PROMPT } from "@/lib/report-prompt"
 import { insertReport } from "@/lib/reports"
 import { createSupabaseServerClient } from "@/lib/supabase-server"
 import type { Entry } from "@/types/entry"
@@ -18,15 +19,34 @@ function statusForResult(
   return 400
 }
 
+function buildPromptText(b: Record<string, unknown>): string {
+  const custom =
+    typeof b.prompt === "string" && b.prompt.trim() ? b.prompt.trim() : null
+  const base = custom ?? DEFAULT_WEEKLY_REPORT_PROMPT
+  const periodStart =
+    typeof b.periodStart === "string" && b.periodStart.trim()
+      ? b.periodStart.trim()
+      : null
+  const periodEnd =
+    typeof b.periodEnd === "string" && b.periodEnd.trim()
+      ? b.periodEnd.trim()
+      : null
+  if (periodStart && periodEnd) {
+    return `Период отчёта: ${periodStart} — ${periodEnd}\n\n${base}`
+  }
+  return base
+}
+
 /**
  * GET: краткая подсказка по формату тела POST.
- * POST: `{ "prompt": string, "entries"?: Entry[] }` → ответ **текстом** (тело = ответ модели).
+ * POST: `{ "prompt"?: string, "entries"?: Entry[], "periodStart"?: string, "periodEnd"?: string }`
+ * → ответ text/plain. Если `prompt` нет — используется встроенный шаблон.
  */
 export async function GET() {
   return NextResponse.json({
     ok: true,
     message:
-      'POST JSON: { "prompt": string, "entries"?: Entry[] } → ответ text/plain с текстом модели.',
+      "POST JSON: { prompt?: string, entries?: Entry[], periodStart?: string, periodEnd?: string } → text/plain.",
   })
 }
 
@@ -46,12 +66,6 @@ export async function POST(request: NextRequest) {
   }
 
   const b = body as Record<string, unknown>
-  if (typeof b.prompt !== "string") {
-    return NextResponse.json(
-      { error: "Поле prompt обязательно и должно быть строкой." },
-      { status: 400 }
-    )
-  }
 
   let entries: Entry[] = []
   if (b.entries !== undefined) {
@@ -68,7 +82,9 @@ export async function POST(request: NextRequest) {
     entries = parsed
   }
 
-  const result = await completePromptWithEntries(b.prompt, entries)
+  const promptText = buildPromptText(b)
+
+  const result = await completePromptWithEntries(promptText, entries)
   if (!result.ok) {
     return NextResponse.json(
       { error: result.error },
@@ -85,7 +101,7 @@ export async function POST(request: NextRequest) {
       const { error: insertError } = await insertReport(
         {
           userId: user.id,
-          prompt: b.prompt,
+          prompt: promptText,
           body: result.text,
           entriesSnapshot: entries.length > 0 ? entries : null,
         },

@@ -7,10 +7,17 @@ export type Entry = {
   userId: string
   createdAt: string
   updatedAt: string
+  /** When the episode happened (UI); falls back to createdAt if null in DB. */
+  episodeAt?: string | null
   /** What happened; main body of the log */
   notes: string
-  /** Self-rated intensity, e.g. 1–10 */
+  /** Self-rated arousal / «возбуждение», 1–10 */
   intensity?: number | null
-  /** What set it off, if known */
+  /** Self-rated aggression, 1–10 */
+  aggression?: number | null
+  /** Legacy single field; prefer `triggers` when present */
   trigger?: string | null
+  triggers?: string | null
+  factors?: string | null
+  outcome?: string | null
 }

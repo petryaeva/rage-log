@@ -13,11 +13,19 @@ function truncate(s: string, max: number): string {
 function formatEntriesForPrompt(entries: Entry[]): string {
   return entries
     .map((e, i) => {
+      const when = e.episodeAt || e.createdAt || "—"
       const lines = [
-        `${i + 1}. Дата: ${e.createdAt || "—"}`,
-        e.intensity != null ? `Интенсивность: ${e.intensity}/10` : null,
-        e.trigger ? `Триггер: ${e.trigger}` : null,
-        `Заметки: ${truncate(e.notes, MAX_NOTES_CHARS)}`,
+        `${i + 1}. Дата: ${when}`,
+        e.intensity != null ? `Возбуждение: ${e.intensity}/10` : null,
+        e.aggression != null ? `Агрессия: ${e.aggression}/10` : null,
+        e.triggers?.trim()
+          ? `Триггеры: ${e.triggers.trim()}`
+          : e.trigger?.trim()
+            ? `Триггеры: ${e.trigger.trim()}`
+            : null,
+        e.factors?.trim() ? `Факторы: ${truncate(e.factors, MAX_NOTES_CHARS)}` : null,
+        e.outcome?.trim() ? `Итог: ${truncate(e.outcome, MAX_NOTES_CHARS)}` : null,
+        `Описание: ${truncate(e.notes, MAX_NOTES_CHARS)}`,
       ].filter(Boolean)
       return lines.join("\n")
     })

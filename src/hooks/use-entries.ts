@@ -13,35 +13,40 @@ export type EntriesScope = "all" | "last7days"
 
 function entriesQueryKey(
   userId: string | undefined,
-  scope: EntriesScope = "all"
+  scope: EntriesScope = "all",
+  range?: { from: string; to: string }
 ) {
+  if (range) {
+    return ["entries", userId, "range", range.from, range.to] as const
+  }
   return ["entries", userId, scope] as const
 }
 
 type UseEntriesOptions = {
-  /** `last7days` — только записи за последние 7 суток (по `created_at`). */
   scope?: EntriesScope
+  range?: { from: string; to: string }
 }
 
-/**
- * Loads the signed-in user’s entries from Supabase (newest first).
- * Disabled until auth is ready and a user id exists.
- */
 export function useEntries(options?: UseEntriesOptions) {
   const scope = options?.scope ?? "all"
+  const range = options?.range
   const { session, isLoading: authLoading } = useAuth()
   const userId = session?.user.id
 
   return useQuery({
-    queryKey: entriesQueryKey(userId, scope),
+    queryKey: entriesQueryKey(userId, scope, range),
     queryFn: async (): Promise<Entry[]> => {
       if (!userId) return []
+      const fetchOpts =
+        range != null
+          ? { createdAfter: range.from, createdBefore: range.to }
+          : scope === "last7days"
+            ? { createdAfter: getCreatedAfterRollingDaysAgo(7) }
+            : undefined
       const { data, error } = await fetchEntriesForUser(
         userId,
         undefined,
-        scope === "last7days"
-          ? { createdAfter: getCreatedAfterRollingDaysAgo(7) }
-          : undefined
+        fetchOpts
       )
       if (error) {
         throw new Error(error.message)

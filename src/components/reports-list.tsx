@@ -27,7 +27,7 @@ export function ReportsList() {
   } = useReports()
 
   return (
-    <section className="flex w-full max-w-lg flex-col gap-2.5 sm:gap-3">
+    <section className="flex w-full flex-col gap-2.5 sm:gap-3">
       <h2 className="font-heading text-sm font-medium text-foreground">
         Сохранённые отчёты
       </h2>

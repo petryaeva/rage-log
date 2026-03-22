@@ -56,12 +56,3 @@ export function ReportsListSkeleton() {
     </ul>
   )
 }
-
-export function ReportGeneratorHintSkeleton() {
-  return (
-    <div className="space-y-2" aria-hidden>
-      <Skeleton className="h-3 w-40" />
-      <Skeleton className="h-2.5 w-56" />
-    </div>
-  )
-}

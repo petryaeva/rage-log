@@ -4,6 +4,7 @@ import * as React from "react"
 import { LineChart as LineChartIcon } from "lucide-react"
 import {
   CartesianGrid,
+  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -20,7 +21,19 @@ import { useEntries } from "@/hooks/use-entries"
 type Point = {
   id: string
   label: string
-  intensity: number
+  arousal: number | null
+  aggression: number | null
+}
+
+function formatDateOnly(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat("ru-RU", {
+      day: "numeric",
+      month: "short",
+    }).format(new Date(iso))
+  } catch {
+    return iso
+  }
 }
 
 export function EntriesChart() {
@@ -37,32 +50,31 @@ export function EntriesChart() {
   const chartData = React.useMemo((): Point[] => {
     if (!entries?.length) return []
     return [...entries]
-      .filter((e) => e.intensity != null)
+      .filter(
+        (e) => e.intensity != null || e.aggression != null
+      )
       .sort(
         (a, b) =>
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          new Date(a.episodeAt || a.createdAt).getTime() -
+          new Date(b.episodeAt || b.createdAt).getTime()
       )
       .map((e) => ({
         id: e.id,
-        label: new Intl.DateTimeFormat("ru-RU", {
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        }).format(new Date(e.createdAt)),
-        intensity: e.intensity!,
+        label: formatDateOnly(e.episodeAt || e.createdAt),
+        arousal: e.intensity ?? null,
+        aggression: e.aggression ?? null,
       }))
   }, [entries])
 
   const header = (
     <CardHeader className="px-4 pb-1 pt-3 sm:px-6 sm:pb-2 sm:pt-4">
-      <CardTitle className="text-base">Динамика возбуждения</CardTitle>
+      <CardTitle className="text-base">Динамика</CardTitle>
     </CardHeader>
   )
 
   if (isLoading) {
     return (
-      <Card className="w-full max-w-lg shadow-sm">
+      <Card className="w-full shadow-sm">
         {header}
         <CardContent className="px-0 pb-0 sm:px-0">
           <ChartCardSkeleton />
@@ -73,7 +85,7 @@ export function EntriesChart() {
 
   if (error) {
     return (
-      <Card className="w-full max-w-lg shadow-sm">
+      <Card className="w-full shadow-sm">
         {header}
         <CardContent className="px-4 pb-4 pt-2 sm:px-6 sm:pb-5 sm:pt-3">
           <QueryErrorState
@@ -90,20 +102,20 @@ export function EntriesChart() {
   if (chartData.length === 0) {
     const hasEntries = (entries?.length ?? 0) > 0
     return (
-      <Card className="w-full max-w-lg shadow-sm">
+      <Card className="w-full shadow-sm">
         {header}
         <CardContent className="px-4 pb-4 pt-2 sm:px-6 sm:pb-5 sm:pt-3">
           {hasEntries ? (
             <EmptyState
               icon={LineChartIcon}
               title="Нет оценок для графика"
-              description="За последние 7 суток есть записи, но без степени возбуждения. Укажите её при следующей записи — линия появится автоматически."
+              description="Укажите степень возбуждения и/или агрессии в записях — здесь появятся две линии за неделю."
             />
           ) : (
             <EmptyState
               icon={LineChartIcon}
               title="Нет данных за неделю"
-              description="Добавьте запись с оценкой возбуждения (1–10) в форме ниже — здесь появится динамика по дням."
+              description="Добавьте записи с оценками в разделе «Запись»."
             />
           )}
         </CardContent>
@@ -112,7 +124,7 @@ export function EntriesChart() {
   }
 
   return (
-    <Card className="w-full max-w-lg shadow-sm">
+    <Card className="w-full shadow-sm">
       {header}
       <CardContent className="px-2 pb-3 pl-1 sm:px-6 sm:pb-4 sm:pl-0">
         <div className="h-[200px] w-full min-w-0 sm:h-[240px]">
@@ -140,18 +152,29 @@ export function EntriesChart() {
                   borderRadius: "8px",
                   fontSize: "12px",
                 }}
-                formatter={(value: unknown) => [
-                  `${value ?? "—"}/10`,
-                  "Возбуждение",
-                ]}
+              />
+              <Legend
+                wrapperStyle={{ fontSize: "12px" }}
+                formatter={(value) =>
+                  value === "arousal" ? "Возбуждение" : "Агрессия"
+                }
               />
               <Line
                 type="monotone"
-                dataKey="intensity"
+                dataKey="arousal"
+                name="arousal"
                 stroke="var(--color-primary)"
                 strokeWidth={2}
                 dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
+                connectNulls
+              />
+              <Line
+                type="monotone"
+                dataKey="aggression"
+                name="aggression"
+                stroke="var(--color-chart-2)"
+                strokeWidth={2}
+                dot={{ r: 3 }}
                 connectNulls
               />
             </LineChart>

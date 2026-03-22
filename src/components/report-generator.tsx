@@ -13,27 +13,58 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { QueryErrorState } from "@/components/content-state"
-import { ReportGeneratorHintSkeleton } from "@/components/list-skeletons"
-import { Textarea } from "@/components/ui/textarea"
 import { useEntries } from "@/hooks/use-entries"
 import { reportsQueryKey } from "@/hooks/use-reports"
 
-const DEFAULT_PROMPT =
-  "Кратко проанализируй записи за последнюю неделю: динамика интенсивности, возможные триггеры и одна практическая рекомендация."
+function toDateInputLocal(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${y}-${m}-${day}`
+}
+
+function localDayStartIso(dateStr: string): string {
+  const [y, mo, d] = dateStr.split("-").map(Number)
+  return new Date(y, mo - 1, d, 0, 0, 0, 0).toISOString()
+}
+
+function localDayEndIso(dateStr: string): string {
+  const [y, mo, d] = dateStr.split("-").map(Number)
+  return new Date(y, mo - 1, d, 23, 59, 59, 999).toISOString()
+}
+
+function defaultRange(): { from: string; to: string } {
+  const end = new Date()
+  const start = new Date()
+  start.setDate(start.getDate() - 7)
+  return { from: toDateInputLocal(start), to: toDateInputLocal(end) }
+}
 
 export function ReportGenerator() {
   const queryClient = useQueryClient()
   const { session } = useAuth()
   const userId = session?.user.id
+  const [{ from: fromDate, to: toDate }, setRange] = React.useState(() =>
+    defaultRange()
+  )
+  const range = React.useMemo(
+    () => ({
+      from: localDayStartIso(fromDate),
+      to: localDayEndIso(toDate),
+    }),
+    [fromDate, toDate]
+  )
+
   const {
     data: entries,
     isLoading: entriesLoading,
     error: entriesError,
     refetch: refetchEntries,
     isFetching: entriesRefetching,
-  } = useEntries({ scope: "last7days" })
-  const [prompt, setPrompt] = React.useState(DEFAULT_PROMPT)
+  } = useEntries({ range })
+
   const [reportText, setReportText] = React.useState<string | null>(null)
   const [submitError, setSubmitError] = React.useState<string | null>(null)
   const [isGenerating, setIsGenerating] = React.useState(false)
@@ -42,6 +73,10 @@ export function ReportGenerator() {
     e.preventDefault()
     setSubmitError(null)
     setReportText(null)
+    if (fromDate > toDate) {
+      setSubmitError("Начало периода не может быть позже конца.")
+      return
+    }
     setIsGenerating(true)
     try {
       const res = await fetch("/api/report", {
@@ -49,8 +84,9 @@ export function ReportGenerator() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          prompt: prompt.trim(),
           entries: entries ?? [],
+          periodStart: fromDate,
+          periodEnd: toDate,
         }),
       })
       if (!res.ok) {
@@ -85,19 +121,16 @@ export function ReportGenerator() {
     isGenerating || entriesLoading || Boolean(entriesError)
 
   return (
-    <Card className="w-full max-w-lg shadow-sm">
+    <Card className="w-full shadow-sm">
       <CardHeader className="space-y-1 px-4 pb-1 pt-3 sm:px-6 sm:pb-2 sm:pt-4">
         <CardTitle className="text-base">Отчёт</CardTitle>
         <CardDescription className="text-xs leading-snug sm:text-sm">
-          <span className="hidden sm:inline">
-            В анализ попадают записи за последние 7 суток. Отчёт можно сохранить
-            в базе, если вы вошли в аккаунт.
-          </span>
-          <span className="sm:hidden">Записи за 7 суток.</span>
+          Выберите период (по умолчанию — последние 7 дней). Отчёт сохранится в
+          базе при входе в аккаунт.
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
-        <CardContent className="flex flex-col gap-3 px-4 pb-1 sm:gap-4 sm:px-6 sm:pb-2">
+        <CardContent className="flex flex-col gap-4 px-4 pb-1 sm:gap-4 sm:px-6 sm:pb-2">
           {entriesError ? (
             <QueryErrorState
               title="Записи не загрузились"
@@ -106,36 +139,46 @@ export function ReportGenerator() {
               isRetrying={entriesRefetching}
             />
           ) : null}
-          <div className="space-y-1.5 sm:space-y-2">
-            <label htmlFor="report-prompt" className="text-sm font-medium">
-              Запрос к ассистенту
-            </label>
-            <Textarea
-              id="report-prompt"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              disabled={disabled}
-              rows={3}
-              className="min-h-[4rem] resize-y py-2 sm:min-h-[5.5rem]"
-              aria-describedby={
-                entriesLoading && !entriesError
-                  ? undefined
-                  : "report-prompt-hint"
-              }
-            />
-            {entriesLoading && !entriesError ? (
-              <div aria-busy="true" aria-live="polite">
-                <ReportGeneratorHintSkeleton />
-              </div>
-            ) : (
-              <p
-                id="report-prompt-hint"
-                className="text-muted-foreground text-xs"
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <label
+                htmlFor="report-from"
+                className="text-sm font-medium"
               >
-                {`В запросе учтено записей: ${entries?.length ?? 0}.`}
-              </p>
-            )}
+                С даты
+              </label>
+              <Input
+                id="report-from"
+                type="date"
+                value={fromDate}
+                onChange={(e) =>
+                  setRange((r) => ({ ...r, from: e.target.value }))
+                }
+                disabled={disabled}
+                className="h-11 sm:h-10"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="report-to" className="text-sm font-medium">
+                По дату
+              </label>
+              <Input
+                id="report-to"
+                type="date"
+                value={toDate}
+                onChange={(e) =>
+                  setRange((r) => ({ ...r, to: e.target.value }))
+                }
+                disabled={disabled}
+                className="h-11 sm:h-10"
+              />
+            </div>
           </div>
+          <p className="text-muted-foreground text-xs">
+            {entriesLoading
+              ? "Загрузка записей…"
+              : `Записей в периоде: ${entries?.length ?? 0}.`}
+          </p>
           {submitError ? (
             <QueryErrorState
               title="Не удалось сформировать отчёт"
@@ -162,7 +205,7 @@ export function ReportGenerator() {
             disabled={disabled}
             className="w-full sm:h-9 sm:min-h-9 sm:w-auto sm:rounded-lg sm:px-3 sm:text-sm"
           >
-            {isGenerating ? "Генерация…" : "Сформировать отчёт"}
+            {isGenerating ? "Генерация…" : "Сгенерировать отчёт"}
           </Button>
         </CardFooter>
       </form>
